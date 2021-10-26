@@ -1,5 +1,6 @@
 const express = require("express");
 const User = require("../models/User");
+const bcrypt = require('bcryptjs');
 const router = express.Router();
 const { body, validationResult } = require("express-validator");
 
@@ -29,10 +30,15 @@ router.post(
           .json({ error: "A User With This Email Already Exist!" });
       }
 
+      // creating a secure password by hashing it with bcrypt js
+      const salt = await bcrypt.genSalt(10);
+      const securePassword = await bcrypt.hash(request.body.password, salt);
+
+      // creating user in mongo db using secure password
       await User.create({
         name: request.body.name,
         email: request.body.email,
-        password: request.body.password,
+        password: securePassword,
       })
         .then((user) => response.json(user))
         .catch((err) =>
