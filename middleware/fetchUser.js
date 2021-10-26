@@ -1,7 +1,9 @@
 const { request } = require('express');
 const jwt = require('jsonwebtoken');
+require('dotenv').config()
 
-const JWT_SECRETE = "DarshanPatel";
+
+const JWT_SECRETE = process.env.JWT_SECRETE;
 
 
 // creating a middleware function to fetch user from JWT Token
@@ -18,7 +20,7 @@ const fetchUser = (request, response, next) => {
         request.user = data.user;
         next();
     } catch (error) {
-        response.status(401).json({error:'k'})
+        response.status(401).json({error:'Please Login With Valid Token!'})
     }
 }
 
