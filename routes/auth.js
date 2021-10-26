@@ -1,8 +1,12 @@
 const express = require("express");
 const User = require("../models/User");
-const bcrypt = require('bcryptjs');
+const bcrypt = require("bcryptjs");
 const router = express.Router();
 const { body, validationResult } = require("express-validator");
+const jwt = require("jsonwebtoken");
+
+// Making a JWT secrete
+const JWT_SECRETE = "DarshanPatel";
 
 // Create a user using Post "api/auth/createUser". Doesn't require auth
 router.post(
@@ -35,20 +39,26 @@ router.post(
       const securePassword = await bcrypt.hash(request.body.password, salt);
 
       // creating user in mongo db using secure password
-      await User.create({
+      user = await User.create({
         name: request.body.name,
         email: request.body.email,
         password: securePassword,
-      })
-        .then((user) => response.json(user))
-        .catch((err) =>
-          response
-            .status(500)
-            .json({ error: "Internal Server Error", message: err.message })
-        );
+      });
+
+      const data = {
+        user: {
+          id: user._id,
+        },
+      };
+      const authToken = jwt.sign(data, JWT_SECRETE);
+
+      response.json({authToken});
+
     } catch (error) {
       console.error(error.message);
-      response.status(500).json({error:'Some internal server error occured !'})
+      response
+        .status(500)
+        .json({ error: "Some internal server error occured !" });
     }
   }
 );
