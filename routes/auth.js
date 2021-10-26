@@ -4,17 +4,22 @@ const bcrypt = require("bcryptjs");
 const router = express.Router();
 const { body, validationResult } = require("express-validator");
 const jwt = require("jsonwebtoken");
+const { request, response } = require("express");
 
 // Making a JWT secrete
 const JWT_SECRETE = "DarshanPatel";
 
-// Create a user using Post "api/auth/createUser". Doesn't require auth
+// Create a user using Post "api/auth/createUser". Doesn't require auth            """" SIGN_UP """"
 router.post(
   "/createUser",
   [
-    body("name", "Enter A Valid Name").isLength({ min: 3 }),
+    body("name", "Name Must Be At Least 3 Characters Long").isLength({
+      min: 3,
+    }),
     body("email", "Enter A Valid Email").isEmail(),
-    body("password", "Enter A valid Password").isLength({ min: 6 }),
+    body("password", "Password Must Be At Least 6 Characters Long").isLength({
+      min: 6,
+    }),
   ],
   async (request, response) => {
     const errors = validationResult(request);
@@ -52,13 +57,61 @@ router.post(
       };
       const authToken = jwt.sign(data, JWT_SECRETE);
 
-      response.json({authToken});
-
+      response.json({ authToken });
     } catch (error) {
       console.error(error.message);
       response
         .status(500)
         .json({ error: "Some internal server error occured !" });
+    }
+  }
+);
+
+// User Login With POST api/auth/login, dont require auth      """" LOGIN """"
+router.post(
+  "/login",
+  [
+    body("email", "Please Enter A Valid Email").isEmail(),
+    body("password", "Password Cannot Be Blank").exists(),
+  ],
+  async (request, response) => {
+    // Checking for input errors and return 400 Bad request & errors
+    const errors = await validationResult(request);
+    if (!errors.isEmpty()) {
+      return response.status(400).json({ errors: errors.mapped() });
+    }
+
+    // Binding in try Catch
+    try {
+      // checking if user exist or not and return 404 Invalid Email Or Password
+      const user = await User.findOne({ email: request.body.email });
+      if (!user) {
+        return response
+          .status(400)
+          .json({ error: "Invalid Email or Password" });
+      }
+
+      // checking if password is correct or not using bcrypt.compare
+      const isCredTrue = await bcrypt
+        .compare(request.body.password, user.password)
+        .catch((err) => console.log(err.message));
+
+      // sending error if passwords dont match
+      if (!isCredTrue) {
+        return response
+          .status(400)
+          .json({ error: "Invalid Email or Password" });
+      }
+
+      const payload = {
+        id: user._id,
+      };
+      const authToken = jwt.sign(payload, JWT_SECRETE);
+      response.json({ authToken });
+    } catch (error) {
+      response
+        .status(500)
+        .json({ error: "Some Internal Server Error Occured!" });
     }
   }
 );
