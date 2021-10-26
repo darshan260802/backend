@@ -5,11 +5,12 @@ const router = express.Router();
 const { body, validationResult } = require("express-validator");
 const jwt = require("jsonwebtoken");
 const { request, response } = require("express");
+const fetchUser = require('../middleware/fetchUser');
 
 // Making a JWT secrete
 const JWT_SECRETE = "DarshanPatel";
 
-// Create a user using Post "api/auth/createUser". Doesn't require auth            """" SIGN_UP """"
+// ROUTE 1: Create a user using Post "api/auth/createUser". Doesn't require auth            """" SIGN_UP """"
 router.post(
   "/createUser",
   [
@@ -67,7 +68,7 @@ router.post(
   }
 );
 
-// User Login With POST api/auth/login, dont require auth      """" LOGIN """"
+//ROUTE 2:  User Login With POST api/auth/login, dont require auth      """" LOGIN """"
 router.post(
   "/login",
   [
@@ -104,7 +105,9 @@ router.post(
       }
 
       const payload = {
-        id: user._id,
+          user:{
+              id: user._id,
+          }
       };
       const authToken = jwt.sign(payload, JWT_SECRETE);
       response.json({ authToken });
@@ -115,5 +118,17 @@ router.post(
     }
   }
 );
+
+// ROUTE 3: Get LoggedIn User Details, GET api/auth/getUser  Login Required...
+router.get('/getUser', fetchUser, async(request,response) => {
+    try {
+        const userId = request.user.id;
+        const user = await User.findById(userId).select('-password')
+        response.json(user)
+        
+    } catch (error) {
+        console.log(error);
+    }
+})
 
 module.exports = router;
