@@ -105,12 +105,12 @@ router.post(
           .json({ error: "Invalid Email or Password" });
       }
 
-      const payload = {
+      const data = {
           user:{
               id: user._id,
           }
       };
-      const authToken = jwt.sign(payload, JWT_SECRETE);
+      const authToken = jwt.sign(data, JWT_SECRETE);
       response.json({ authToken });
     } catch (error) {
       response
